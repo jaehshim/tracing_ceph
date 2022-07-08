@@ -959,7 +959,7 @@ void RocksDBStore::RocksDBTransactionImpl::put_bat(
 							   to_set_bl.length()));
 	} else {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << "value length is not correctly calculated!!" << dendl;
+		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ",  value length is not correctly calculated!!" << dendl;
 #endif
 		rocksdb::Slice key_slice(key);
 		vector<rocksdb::Slice> value_slices(to_set_bl.get_num_buffers());
