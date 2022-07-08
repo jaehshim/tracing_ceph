@@ -926,7 +926,7 @@ int KernelDevice::aio_write(uint64_t off, bufferlist &bl, IOContext *ioc,
 	if (aio && dio && !buffered) {
 #ifdef TRACE_BDEV
 		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
-				<< (buffered ? " (buffered)" : " (direct)") << " handled by aio " << RW_IO_MAX << dendl;
+				<< (buffered ? " (buffered)" : " (direct)") << " handled by aio " << dendl;
 #endif
 		if (cct->_conf->bdev_inject_crash &&
 			rand() % cct->_conf->bdev_inject_crash == 0) {
