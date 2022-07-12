@@ -55,6 +55,8 @@
 #define tracepoint(...)
 #endif
 
+#define TRACE_RXDB_IN_BS
+
 #define dout_context cct
 #define dout_subsys ceph_subsys_bluestore
 
@@ -6431,8 +6433,10 @@ int BlueStore::_open_collections()
 	collections_had_errors = false;
 	ceph_assert(coll_map.empty());
 	KeyValueDB::Iterator it = db->get_iterator(PREFIX_COLL);
+	int it_cnt = 0;
 	for (it->upper_bound(string()); it->valid(); it->next()) {
 		coll_t cid;
+		it_cnt++;
 		if (cid.parse(it->key())) {
 			auto c = ceph::make_ref<Collection>(
 				this,
@@ -6460,6 +6464,9 @@ int BlueStore::_open_collections()
 			collections_had_errors = true;
 		}
 	}
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	return 0;
 }
 
@@ -6468,7 +6475,9 @@ void BlueStore::_fsck_collections(int64_t *errors)
 	if (collections_had_errors) {
 		dout(10) << __func__ << dendl;
 		KeyValueDB::Iterator it = db->get_iterator(PREFIX_COLL);
+		int it_cnt = 0;
 		for (it->upper_bound(string()); it->valid(); it->next()) {
+			it_cnt++;
 			coll_t cid;
 			if (!cid.parse(it->key())) {
 				derr << __func__ << " unrecognized collection " << it->key()
@@ -6479,6 +6488,9 @@ void BlueStore::_fsck_collections(int64_t *errors)
 			}
 		}
 	}
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 }
 
 void BlueStore::_set_per_pool_omap()
@@ -6517,8 +6529,10 @@ void BlueStore::_open_statfs()
 		per_pool_stat_collection = true;
 		dout(10) << __func__ << " per-pool statfs is enabled" << dendl;
 		KeyValueDB::Iterator it = db->get_iterator(PREFIX_STAT);
+		int it_cnt = 0;
 		for (it->upper_bound(string()); it->valid(); it->next()) {
 			uint64_t pool_id;
+			it_cnt++;
 			int r = get_key_pool_stat(it->key(), &pool_id);
 			ceph_assert(r == 0);
 
@@ -6537,6 +6551,9 @@ void BlueStore::_open_statfs()
 					 << pretty_binary_string(it->key()) << dendl;
 			}
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	}
 	dout(30) << __func__ << " statfs " << vstatfs << dendl;
 }
@@ -7520,8 +7537,10 @@ void BlueStore::_fsck_check_pool_statfs(
 	int64_t &warnings, BlueStoreRepairer *repairer)
 {
 	auto it = db->get_iterator(PREFIX_STAT);
+	int it_cnt = 0;
 	if (it) {
 		for (it->lower_bound(string()); it->valid(); it->next()) {
+			it_cnt++;
 			string key = it->key();
 			if (key == BLUESTORE_GLOBAL_STATFS_KEY) {
 				if (repairer) {
@@ -7600,6 +7619,9 @@ void BlueStore::_fsck_check_pool_statfs(
 			expected_pool_statfs.erase(stat_it);
 		}
 	} // if (it)
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	for (auto &s : expected_pool_statfs) {
 		if (s.second.is_zero()) {
 			// we might lack empty statfs recs in DB
@@ -8146,6 +8168,7 @@ void BlueStore::_fsck_check_objects(FSCKDepth depth,
 	size_t processed_myself = 0;
 
 	auto it = db->get_iterator(PREFIX_OBJ);
+	int it_cnt = 0;
 	mempool::bluestore_fsck::list<string> expecting_shards;
 	if (it) {
 		const size_t thread_count =
@@ -8169,6 +8192,7 @@ void BlueStore::_fsck_check_objects(FSCKDepth depth,
 		int64_t pool_id = -1;
 		spg_t pgid;
 		for (it->lower_bound(string()); it->valid(); it->next()) {
+			it_cnt++;
 			dout(30) << __func__ << " key " << pretty_binary_string(it->key())
 					 << dendl;
 			if (is_extent_shard_key(it->key())) {
@@ -8378,6 +8402,9 @@ void BlueStore::_fsck_check_objects(FSCKDepth depth,
 			}
 		}
 	} // if (it)
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 }
 /**
 An overview for currently implemented repair logics 
@@ -8629,12 +8656,14 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 
 	dout(1) << __func__ << " checking shared_blobs" << dendl;
 	it = db->get_iterator(PREFIX_SHARED_BLOB);
+	int it_cnt = 0;
 	if (it) {
 		// FIXME minor: perhaps simplify for shallow mode?
 		// fill global if not overriden below
 		auto expected_statfs = &expected_store_statfs;
 
 		for (it->lower_bound(string()); it->valid(); it->next()) {
+			it_cnt++;
 			string key = it->key();
 			uint64_t sbid;
 			if (get_key_shared_blob(key, &sbid)) {
@@ -8705,6 +8734,9 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			}
 		}
 	} // if (it)
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 
 	if (repair && repairer.preprocess_misreference(db)) {
 		dout(1) << __func__ << " sorting out misreferenced extents" << dendl;
@@ -8712,6 +8744,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 		auto &misref_extents = repairer.get_misreferences();
 		interval_set<uint64_t> to_release;
 		it = db->get_iterator(PREFIX_OBJ);
+		int it_cnt = 0;
 		if (it) {
 			// fill global if not overriden below
 			auto expected_statfs = &expected_store_statfs;
@@ -8722,6 +8755,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			bool bypass_rest = false;
 			for (it->lower_bound(string()); it->valid() && !bypass_rest;
 				 it->next()) {
+				it_cnt++;
 				dout(30) << __func__ << " key "
 						 << pretty_binary_string(it->key()) << dendl;
 				if (is_extent_shard_key(it->key())) {
@@ -8903,6 +8937,9 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			alloc->release(to_release);
 			to_release.clear();
 		} // if (it) {
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	} //if (repair && repairer.preprocess_misreference()) {
 
 	if (depth != FSCK_SHALLOW) {
@@ -8953,10 +8990,12 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 	if (depth != FSCK_SHALLOW) {
 		dout(1) << __func__ << " checking for stray omap data " << dendl;
 		it = db->get_iterator(PREFIX_OMAP);
+		int it_cnt = 0;
 		if (it) {
 			uint64_t last_omap_head = 0;
 			for (it->lower_bound(string()); it->valid(); it->next()) {
 				uint64_t omap_head;
+				it_cnt++;
 				_key_decode_u64(it->key().c_str(), &omap_head);
 				if (used_omap_head.count(omap_head) == 0 &&
 					omap_head != last_omap_head) {
@@ -8969,11 +9008,16 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 				}
 			}
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 		it = db->get_iterator(PREFIX_PGMETA_OMAP);
+		it_cnt = 0;
 		if (it) {
 			uint64_t last_omap_head = 0;
 			for (it->lower_bound(string()); it->valid(); it->next()) {
 				uint64_t omap_head;
+				it_cnt++;
 				_key_decode_u64(it->key().c_str(), &omap_head);
 				if (used_omap_head.count(omap_head) == 0 &&
 					omap_head != last_omap_head) {
@@ -8986,12 +9030,17 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 				}
 			}
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 		it = db->get_iterator(PREFIX_PERPOOL_OMAP);
+		it_cnt = 0;
 		if (it) {
 			uint64_t last_omap_head = 0;
 			for (it->lower_bound(string()); it->valid(); it->next()) {
 				uint64_t pool;
 				uint64_t omap_head;
+				it_cnt++;
 				string k = it->key();
 				const char *c = k.c_str();
 				c = _key_decode_u64(c, &pool);
@@ -9009,10 +9058,12 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 		}
 		dout(1) << __func__ << " checking deferred events" << dendl;
 		it = db->get_iterator(PREFIX_DEFERRED);
+		it_cnt = 0;
 		if (it) {
 			for (it->lower_bound(string()); it->valid(); it->next()) {
 				bufferlist bl = it->value();
 				auto p = bl.cbegin();
+				it_cnt++;
 				bluestore_deferred_transaction_t wt;
 				try {
 					decode(wt, p);
@@ -9042,6 +9093,9 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 				}
 			}
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 
 		dout(1) << __func__ << " checking freelist vs allocated" << dendl;
 		{
@@ -10728,6 +10782,7 @@ int BlueStore::_collection_list(Collection *c, const ghobject_t &start,
 		it = std::make_unique<SortedCollectionListIterator>(
 			db->get_iterator(PREFIX_OBJ));
 	}
+	int it_cnt = 0;
 	if (start == ghobject_t() || start.hobj == hobject_t() ||
 		start == c->cid.get_min_hobj()) {
 		it->upper_bound(coll_range_temp_start);
@@ -10759,6 +10814,7 @@ int BlueStore::_collection_list(Collection *c, const ghobject_t &start,
 	dout(20) << __func__ << " pend " << pend << dendl;
 	while (true) {
 		if (!it->valid() || it->is_ge(pend)) {
+			it_cnt++;
 			if (!it->valid())
 				dout(20)
 					<< __func__ << " iterator not valid (end of db?)" << dendl;
@@ -10801,6 +10857,9 @@ int BlueStore::_collection_list(Collection *c, const ghobject_t &start,
 		it->next();
 	}
 out:
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	if (!set_next) {
 		*pnext = ghobject_t::get_max();
 	}
@@ -10869,11 +10928,13 @@ int BlueStore::_onode_omap_get(
 	{
 		const string &prefix = o->get_omap_prefix();
 		KeyValueDB::Iterator it = db->get_iterator(prefix);
+		int it_cnt = 0;
 		string head, tail;
 		o->get_omap_header(&head);
 		o->get_omap_tail(&tail);
 		it->lower_bound(head);
 		while (it->valid()) {
+			it_cnt++;
 			if (it->key() == head) {
 				dout(30) << __func__ << "  got header" << dendl;
 				*header = it->value();
@@ -10890,6 +10951,9 @@ int BlueStore::_onode_omap_get(
 			}
 			it->next();
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	}
 out:
 	return r;
@@ -10955,11 +11019,13 @@ int BlueStore::omap_get_keys(
 	{
 		const string &prefix = o->get_omap_prefix();
 		KeyValueDB::Iterator it = db->get_iterator(prefix);
+		int it_cnt = 0;
 		string head, tail;
 		o->get_omap_key(string(), &head);
 		o->get_omap_tail(&tail);
 		it->lower_bound(head);
 		while (it->valid()) {
+			it_cnt++;
 			if (it->key() >= tail) {
 				dout(30) << __func__ << "  reached tail" << dendl;
 				break;
@@ -10971,6 +11037,9 @@ int BlueStore::omap_get_keys(
 			keys->insert(user_key);
 			it->next();
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	}
 out:
 	c->store->log_latency(
@@ -11058,19 +11127,28 @@ int BlueStore::omap_get_values(
 	o->flush();
 	{
 		ObjectMap::ObjectMapIterator iter = get_omap_iterator(c_, oid);
+		int it_cnt = 0;
 		if (!iter) {
 			r = -ENOENT;
 			goto out;
 		}
 		iter->upper_bound(*start_after);
 		for (; iter->valid(); iter->next()) {
+			it_cnt++;
 			output->insert(make_pair(iter->key(), iter->value()));
 		}
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	}
 
 out:
 	dout(10) << __func__ << " " << c->get_cid() << " oid " << oid << " = " << r
 			 << dendl;
+
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	return r;
 }
 #endif
@@ -12628,7 +12706,9 @@ int BlueStore::_deferred_replay()
 	}
 	OpSequencer *osr = static_cast<OpSequencer *>(ch->osr.get());
 	KeyValueDB::Iterator it = db->get_iterator(PREFIX_DEFERRED);
+	int it_cnt = 0;
 	for (it->lower_bound(string()); it->valid(); it->next(), ++count) {
+		it_cnt++;
 		dout(20) << __func__ << " replay " << pretty_binary_string(it->key())
 				 << dendl;
 		bluestore_deferred_transaction_t *deferred_txn =
@@ -12650,6 +12730,9 @@ int BlueStore::_deferred_replay()
 		_txc_state_proc(txc);
 	}
 out:
+#ifdef TRACE_RXDB_IN_BS
+	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	dout(20) << __func__ << " draining osr" << dendl;
 	_osr_register_zombie(osr);
 	_osr_drain_all();
@@ -14775,11 +14858,13 @@ int BlueStore::_clone(TransContext *txc, CollectionRef &c, OnodeRef &oldo,
 		}
 		const string &prefix = newo->get_omap_prefix();
 		KeyValueDB::Iterator it = db->get_iterator(prefix);
+		int it_cnt = 0;
 		string head, tail;
 		oldo->get_omap_header(&head);
 		oldo->get_omap_tail(&tail);
 		it->lower_bound(head);
 		while (it->valid()) {
+			it_cnt++;
 			if (it->key() >= tail) {
 				dout(30) << __func__ << "  reached tail" << dendl;
 				break;
@@ -14796,6 +14881,9 @@ int BlueStore::_clone(TransContext *txc, CollectionRef &c, OnodeRef &oldo,
 		bufferlist new_tail_value;
 		newo->get_omap_tail(&new_tail);
 		txc->t->set(prefix, new_tail, new_tail_value);
+#ifdef TRACE_RXDB_IN_BS
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+#endif
 	}
 
 	txc->write_onode(newo);
