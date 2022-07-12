@@ -6487,10 +6487,10 @@ void BlueStore::_fsck_collections(int64_t *errors)
 				}
 			}
 		}
-	}
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+		derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
 #endif
+	}
 }
 
 void BlueStore::_set_per_pool_omap()
@@ -8656,7 +8656,8 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 
 	dout(1) << __func__ << " checking shared_blobs" << dendl;
 	it = db->get_iterator(PREFIX_SHARED_BLOB);
-	int it_cnt = 0;
+	int it_cnt;	
+	it_cnt = 0;
 	if (it) {
 		// FIXME minor: perhaps simplify for shallow mode?
 		// fill global if not overriden below
@@ -8744,7 +8745,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 		auto &misref_extents = repairer.get_misreferences();
 		interval_set<uint64_t> to_release;
 		it = db->get_iterator(PREFIX_OBJ);
-		int it_cnt = 0;
+		it_cnt = 0;
 		if (it) {
 			// fill global if not overriden below
 			auto expected_statfs = &expected_store_statfs;
@@ -8990,7 +8991,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 	if (depth != FSCK_SHALLOW) {
 		dout(1) << __func__ << " checking for stray omap data " << dendl;
 		it = db->get_iterator(PREFIX_OMAP);
-		int it_cnt = 0;
+		it_cnt = 0;
 		if (it) {
 			uint64_t last_omap_head = 0;
 			for (it->lower_bound(string()); it->valid(); it->next()) {
@@ -10782,7 +10783,8 @@ int BlueStore::_collection_list(Collection *c, const ghobject_t &start,
 		it = std::make_unique<SortedCollectionListIterator>(
 			db->get_iterator(PREFIX_OBJ));
 	}
-	int it_cnt = 0;
+	int it_cnt;
+	it_cnt = 0;
 	if (start == ghobject_t() || start.hobj == hobject_t() ||
 		start == c->cid.get_min_hobj()) {
 		it->upper_bound(coll_range_temp_start);
