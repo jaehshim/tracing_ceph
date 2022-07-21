@@ -948,23 +948,29 @@ void RocksDBStore::RocksDBTransactionImpl::put_bat(
 	rocksdb::WriteBatch &bat, rocksdb::ColumnFamilyHandle *cf,
 	const string &key, const bufferlist &to_set_bl)
 {
-#ifdef TRACE_RXDB
-	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " << key.size() 
-			<< ", value length: " << to_set_bl.length() << dendl;
-#endif
 	// bufferlist::c_str() is non-constant, so we can't call c_str()
 	if (to_set_bl.is_contiguous() && to_set_bl.length() > 0) {
+#ifdef TRACE_RXDB
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " << key.size() 
+				<< ", value length(cont): " << to_set_bl.length() << dendl;
+#endif
 		bat.Put(cf, rocksdb::Slice(key),
 				rocksdb::Slice(to_set_bl.buffers().front().c_str(),
 							   to_set_bl.length()));
 	} else {
-#ifdef TRACE_RXDB
-		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ",  value length is not correctly calculated!!" << dendl;
-#endif
 		rocksdb::Slice key_slice(key);
 		vector<rocksdb::Slice> value_slices(to_set_bl.get_num_buffers());
 		bat.Put(cf, rocksdb::SliceParts(&key_slice, 1),
 				prepare_sliceparts(to_set_bl, &value_slices));
+		
+		unsigned int total_len = 0;
+		for (auto &buf : to_set_bl.buffers()) {
+			total_len += buf.length();
+		}
+#ifdef TRACE_RXDB
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " << key.size() 
+				<< ", value length(non-cont): " << total_len << dendl;
+#endif
 	}
 }
 
