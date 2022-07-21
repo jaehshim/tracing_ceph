@@ -6465,7 +6465,7 @@ int BlueStore::_open_collections()
 		}
 	}
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_COLL << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_COLL << ", it_cnt: " << it_cnt << dendl;
 #endif
 	return 0;
 }
@@ -6488,7 +6488,7 @@ void BlueStore::_fsck_collections(int64_t *errors)
 			}
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_COLL << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_COLL << ", it_cnt: " << it_cnt << dendl;
 #endif
 	}
 }
@@ -6552,7 +6552,7 @@ void BlueStore::_open_statfs()
 			}
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_STAT << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_STAT << ", it_cnt: " << it_cnt << dendl;
 
 #endif
 	}
@@ -7621,7 +7621,7 @@ void BlueStore::_fsck_check_pool_statfs(
 		}
 	} // if (it)
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_STAT << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_STAT << ", it_cnt: " << it_cnt << dendl;
 #endif
 	for (auto &s : expected_pool_statfs) {
 		if (s.second.is_zero()) {
@@ -8404,7 +8404,7 @@ void BlueStore::_fsck_check_objects(FSCKDepth depth,
 		}
 	} // if (it)
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
 #endif
 }
 /**
@@ -8737,7 +8737,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 		}
 	} // if (it)
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_SHARED_BLOB << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_SHARED_BLOB << ", it_cnt: " << it_cnt << dendl;
 #endif
 
 	if (repair && repairer.preprocess_misreference(db)) {
@@ -8940,7 +8940,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			to_release.clear();
 		} // if (it) {
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
 #endif
 	} //if (repair && repairer.preprocess_misreference()) {
 
@@ -9011,7 +9011,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			}
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OMAP << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OMAP << ", it_cnt: " << it_cnt << dendl;
 #endif
 		it = db->get_iterator(PREFIX_PGMETA_OMAP);
 		it_cnt = 0;
@@ -9033,7 +9033,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			}
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_PGMETA_OMAP << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_PGMETA_OMAP << ", it_cnt: " << it_cnt << dendl;
 #endif
 		it = db->get_iterator(PREFIX_PERPOOL_OMAP);
 		it_cnt = 0;
@@ -9058,7 +9058,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 				}
 			}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_PERPOOL_OMAP << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_PERPOOL_OMAP << ", it_cnt: " << it_cnt << dendl;
 #endif
 		}
 		dout(1) << __func__ << " checking deferred events" << dendl;
@@ -9099,7 +9099,7 @@ int BlueStore::_fsck_on_open(BlueStore::FSCKDepth depth, bool repair)
 			}
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_DEFERRED << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_DEFERRED << ", it_cnt: " << it_cnt << dendl;
 #endif
 
 		dout(1) << __func__ << " checking freelist vs allocated" << dendl;
@@ -10864,7 +10864,7 @@ int BlueStore::_collection_list(Collection *c, const ghobject_t &start,
 	}
 out:
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_OBJ << ", it_cnt: " << it_cnt << dendl;
 #endif
 	if (!set_next) {
 		*pnext = ghobject_t::get_max();
@@ -10958,7 +10958,7 @@ int BlueStore::_onode_omap_get(
 			it->next();
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
 #endif
 	}
 out:
@@ -11044,7 +11044,7 @@ int BlueStore::omap_get_keys(
 			it->next();
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
 #endif
 	}
 out:
@@ -11144,7 +11144,7 @@ int BlueStore::omap_get_values(
 			output->insert(make_pair(iter->key(), iter->value()));
 		}
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix(oid)" << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix(oid)" << ", it_cnt: " << it_cnt << dendl;
 #endif
 	}
 
@@ -11153,7 +11153,7 @@ out:
 			 << dendl;
 
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ <<", it_cnt: " << it_cnt << dendl;
 #endif
 	return r;
 }
@@ -12737,7 +12737,7 @@ int BlueStore::_deferred_replay()
 	}
 out:
 #ifdef TRACE_RXDB_IN_BS
-	derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_DEFERRED << ", it_cnt: " << it_cnt << dendl;
+	dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << PREFIX_DEFERRED << ", it_cnt: " << it_cnt << dendl;
 #endif
 	dout(20) << __func__ << " draining osr" << dendl;
 	_osr_register_zombie(osr);
@@ -14888,7 +14888,7 @@ int BlueStore::_clone(TransContext *txc, CollectionRef &c, OnodeRef &oldo,
 		newo->get_omap_tail(&new_tail);
 		txc->t->set(prefix, new_tail, new_tail_value);
 #ifdef TRACE_RXDB_IN_BS
-		derr << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
+		dout(1) << "[TRACE_RXDB_IN_BS] " << __func__ << ", prefix: " << prefix << ", it_cnt: " << it_cnt << dendl;
 #endif
 	}
 

@@ -808,7 +808,7 @@ int KernelDevice::_sync_write(uint64_t off, bufferlist &bl, bool buffered,
 {
 	uint64_t len = bl.length();
 #ifdef TRACE_BDEV
-	derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
+	dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
 			<< (buffered ? " (buffered)" : " (direct)") << dendl;
 #endif
 	dout(5) << __func__ << " 0x" << std::hex << off << "~" << len << std::dec
@@ -925,7 +925,7 @@ int KernelDevice::aio_write(uint64_t off, bufferlist &bl, IOContext *ioc,
 #ifdef HAVE_LIBAIO
 	if (aio && dio && !buffered) {
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
 				<< (buffered ? " (buffered)" : " (direct)") << " handled by aio " << dendl;
 #endif
 		if (cct->_conf->bdev_inject_crash &&
@@ -1003,7 +1003,7 @@ int KernelDevice::discard(uint64_t offset, uint64_t len)
 		return 0;
 	}
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << offset << ", len: " << len << dendl;
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << offset << ", len: " << len << dendl;
 #endif
 	if (support_discard) {
 		dout(10) << __func__ << " 0x" << std::hex << offset << "~" << len
@@ -1019,7 +1019,7 @@ int KernelDevice::read(uint64_t off, uint64_t len, bufferlist *pbl,
 					   IOContext *ioc, bool buffered)
 {
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
 				<< (buffered ? " (buffered)" : " (direct)") << dendl;
 #endif
 	dout(5) << __func__ << " 0x" << std::hex << off << "~" << len << std::dec
@@ -1072,7 +1072,7 @@ int KernelDevice::aio_read(uint64_t off, uint64_t len, bufferlist *pbl,
 #ifdef HAVE_LIBAIO
 	if (aio && dio) {
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len
 				<< " handled by aio" << dendl;
 #endif
 		ceph_assert(is_valid_io(off, len));
@@ -1104,7 +1104,7 @@ int KernelDevice::direct_read_unaligned(uint64_t off, uint64_t len, char *buf)
 	bufferptr p = buffer::create_small_page_aligned(aligned_len);
 	int r = 0;
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
 				<< "aligned off: " << aligned_off << ", aligned len: " << aligned_len << dendl;
 #endif
 
@@ -1154,7 +1154,7 @@ int KernelDevice::read_random(uint64_t off, uint64_t len, char *buf,
 		return direct_read_unaligned(off, len, buf);
 
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len 
 				<< "buffered " << buffered << dendl;
 #endif
 	auto start1 = mono_clock::now();
@@ -1213,7 +1213,7 @@ out:
 int KernelDevice::invalidate_cache(uint64_t off, uint64_t len)
 {
 #ifdef TRACE_BDEV
-		derr << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len << dendl;
+		dout(1) << "[TRACE_BDEV] " << __func__ << " offset: " << off << ", len: " << len << dendl;
 #endif
 	dout(5) << __func__ << " 0x" << std::hex << off << "~" << len << std::dec
 			<< dendl;

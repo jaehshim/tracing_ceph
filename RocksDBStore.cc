@@ -100,7 +100,7 @@ public:
 			   rocksdb::Logger *logger) const override
 	{
 #ifdef TRACE_RXDB
-		lderr(store.cct) << "[TRACE_RXDB] MergeOperatorRouter:" << __func__ << dendl;
+		ldout(store.cct, 1) << "[TRACE_RXDB] MergeOperatorRouter:" << __func__ << dendl;
 #endif
 		// for default column family
 		// extract prefix from key and compare against each registered merge op;
@@ -294,7 +294,7 @@ int RocksDBStore::ParseOptionsFromStringStatic(
 				r = -1;
 			}
 			if (r < 0) {
-				derr << "[TRACE_RXDB] " << status.ToString() << dendl;
+				dout(1) << "[TRACE_RXDB] " << status.ToString() << dendl;
 				return -EINVAL;
 			}
 		}
@@ -328,7 +328,7 @@ int RocksDBStore::create_db_dir()
 		if (r < 0)
 			r = -errno;
 		if (r < 0 && r != -EEXIST) {
-			derr << "[TRACE_RXDB] " << __func__ << " failed to create " << path << ": "
+			dout(1) << "[TRACE_RXDB] " << __func__ << " failed to create " << path << ": "
 				 << cpp_strerror(r) << dendl;
 			return r;
 		}
@@ -392,7 +392,7 @@ int RocksDBStore::load_rocksdb_options(bool create_if_missing,
 			for (auto &p : paths) {
 				size_t pos = p.find(',');
 				if (pos == std::string::npos) {
-					derr << "[TRACE_RXDB] " << __func__ << " invalid db path item " << p << " in "
+					dout(1) << "[TRACE_RXDB] " << __func__ << " invalid db path item " << p << " in "
 						 << kv_options["db_paths"] << dendl;
 					return -EINVAL;
 				}
@@ -400,7 +400,7 @@ int RocksDBStore::load_rocksdb_options(bool create_if_missing,
 				string size_str = p.substr(pos + 1);
 				uint64_t size = atoll(size_str.c_str());
 				if (!size) {
-					derr << "[TRACE_RXDB] " << __func__ << " invalid db path item " << p << " in "
+					dout(1) << "[TRACE_RXDB] " << __func__ << " invalid db path item " << p << " in "
 						 << kv_options["db_paths"] << dendl;
 					return -EINVAL;
 				}
@@ -441,12 +441,12 @@ int RocksDBStore::load_rocksdb_options(bool create_if_missing,
 		bbt_opts.block_cache = rocksdb::NewClockCache(
 			block_cache_size, g_conf()->rocksdb_cache_shard_bits);
 		if (!bbt_opts.block_cache) {
-			derr << "[TRACE_RXDB] " << "rocksdb_cache_type '" << g_conf()->rocksdb_cache_type
+			dout(1) << "[TRACE_RXDB] " << "rocksdb_cache_type '" << g_conf()->rocksdb_cache_type
 				 << "' chosen, but RocksDB not compiled with LibTBB. " << dendl;
 			return -EINVAL;
 		}
 	} else {
-		derr << "[TRACE_RXDB] " << "unrecognized rocksdb_cache_type '"
+		dout(1) << "[TRACE_RXDB] " << "unrecognized rocksdb_cache_type '"
 			 << g_conf()->rocksdb_cache_type << "'" << dendl;
 		return -EINVAL;
 	}
@@ -520,7 +520,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 	if (create_if_missing) {
 		status = rocksdb::DB::Open(opt, path, &db);
 		if (!status.ok()) {
-			derr << "[TRACE_RXDB] " << status.ToString() << dendl;
+			dout(1) << "[TRACE_RXDB] " << status.ToString() << dendl;
 			return -EINVAL;
 		}
 		// create and open column families
@@ -533,7 +533,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 				status = rocksdb::GetColumnFamilyOptionsFromString(
 					cf_opt, p.option, &cf_opt);
 				if (!status.ok()) {
-					derr << "[TRACE_RXDB] " << __func__
+					dout(1) << "[TRACE_RXDB] " << __func__
 						 << " invalid db column family option string for CF: "
 						 << p.name << dendl;
 					return -EINVAL;
@@ -542,7 +542,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 				rocksdb::ColumnFamilyHandle *cf;
 				status = db->CreateColumnFamily(cf_opt, p.name, &cf);
 				if (!status.ok()) {
-					derr << "[TRACE_RXDB] " 
+					dout(1) << "[TRACE_RXDB] " 
 						<< __func__
 						<< " Failed to create rocksdb column family: " << p.name
 						<< dendl;
@@ -566,7 +566,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 				status = rocksdb::DB::OpenForReadOnly(opt, path, &db);
 			}
 			if (!status.ok()) {
-				derr << "[TRACE_RXDB] " << status.ToString() << dendl;
+				dout(1) << "[TRACE_RXDB] " << status.ToString() << dendl;
 				return -EINVAL;
 			}
 			default_cf = db->DefaultColumnFamily();
@@ -586,7 +586,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 							status = rocksdb::GetColumnFamilyOptionsFromString(
 								cf_opt, i.option, &cf_opt);
 							if (!status.ok()) {
-								derr << "[TRACE_RXDB] " 
+								dout(1) << "[TRACE_RXDB] " 
 									<< __func__
 									<< " invalid db column family options for CF '"
 									<< i.name << "': " << i.option << dendl;
@@ -615,7 +615,7 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 										   column_families, &handles, &db);
 			}
 			if (!status.ok()) {
-				derr << "[TRACE_RXDB] " << status.ToString() << dendl;
+				dout(1) << "[TRACE_RXDB] " << status.ToString() << dendl;
 				return -EINVAL;
 			}
 			for (unsigned i = 0; i < existing_cfs.size(); ++i) {
@@ -665,9 +665,9 @@ int RocksDBStore::do_open(ostream &out, bool create_if_missing,
 	cct->get_perfcounters_collection()->add(logger);
 
 	if (compact_on_mount) {
-		derr << "[TRACE_RXDB] " << "Compacting rocksdb store..." << dendl;
+		dout(1) << "[TRACE_RXDB] " << "Compacting rocksdb store..." << dendl;
 		compact();
-		derr << "[TRACE_RXDB] " << "Finished compacting rocksdb store" << dendl;
+		dout(1) << "[TRACE_RXDB] " << "Finished compacting rocksdb store" << dendl;
 	}
 	return 0;
 }
@@ -737,7 +737,7 @@ int RocksDBStore::repair(std::ostream &out)
 		return r;
 	}
 #ifdef TRACE_RXDB
-	derr << "[TRACE_RXDB] " << __func__ << dendl;
+	dout(1) << "[TRACE_RXDB] " << __func__ << dendl;
 #endif
 	rocksdb::Status status = rocksdb::RepairDB(path, opt);
 	if (status.ok()) {
@@ -865,7 +865,7 @@ int RocksDBStore::submit_common(rocksdb::WriteOptions &woptions,
 	if (!s.ok()) {
 		RocksWBHandler rocks_txc;
 		_t->bat.Iterate(&rocks_txc);
-		derr << "[TRACE_RXDB] " << __func__ << " error: " << s.ToString() << " code = " << s.code()
+		dout(1) << "[TRACE_RXDB] " << __func__ << " error: " << s.ToString() << " code = " << s.code()
 			 << " Rocksdb transaction: " << rocks_txc.seen << dendl;
 	}
 
@@ -912,7 +912,7 @@ int RocksDBStore::submit_transaction(KeyValueDB::Transaction t)
 	logger->tinc(l_rocksdb_submit_latency, lat);
 
 #ifdef TRACE_RXDB
-	derr << "[TRACE_RXDB] " << __func__ << ", elapsed time: " << lat << dendl;
+	dout(1) << "[TRACE_RXDB] " << __func__ << ", elapsed time: " << lat << dendl;
 #endif
 
 	return result;
@@ -933,7 +933,7 @@ int RocksDBStore::submit_transaction_sync(KeyValueDB::Transaction t)
 	logger->tinc(l_rocksdb_submit_sync_latency, lat);
 
 #ifdef TRACE_RXDB
-	derr << "[TRACE_RXDB] " << __func__ << ", elapsed time: " << lat << dendl;
+	dout(1) << "[TRACE_RXDB] " << __func__ << ", elapsed time: " << lat << dendl;
 #endif
 
 	return result;
@@ -949,7 +949,7 @@ void RocksDBStore::RocksDBTransactionImpl::put_bat(
 	const string &key, const bufferlist &to_set_bl)
 {
 #ifdef TRACE_RXDB
-	lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " << key.size() 
+	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " << key.size() 
 			<< ", value length: " << to_set_bl.length() << dendl;
 #endif
 	// bufferlist::c_str() is non-constant, so we can't call c_str()
@@ -959,7 +959,7 @@ void RocksDBStore::RocksDBTransactionImpl::put_bat(
 							   to_set_bl.length()));
 	} else {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ",  value length is not correctly calculated!!" << dendl;
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ",  value length is not correctly calculated!!" << dendl;
 #endif
 		rocksdb::Slice key_slice(key);
 		vector<rocksdb::Slice> value_slices(to_set_bl.get_num_buffers());
@@ -1004,13 +1004,13 @@ void RocksDBStore::RocksDBTransactionImpl::rmkey(const string &prefix,
 	auto cf = db->get_cf_handle(prefix);
 	if (cf) {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
 				<< ", klen: " << k.size() << dendl;
 #endif
 		bat.Delete(cf, rocksdb::Slice(k));
 	} else {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << combine_strings(prefix, k) 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << combine_strings(prefix, k) 
 				<< ", klen: " << combine_strings(prefix, k).size() << dendl;
 #endif
 		bat.Delete(db->default_cf, combine_strings(prefix, k));
@@ -1023,7 +1023,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkey(const string &prefix,
 	auto cf = db->get_cf_handle(prefix);
 	if (cf) {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
 				<< ", klen: " << keylen << dendl;
 #endif
 		bat.Delete(cf, rocksdb::Slice(k, keylen));
@@ -1031,7 +1031,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkey(const string &prefix,
 		string key;
 		combine_strings(prefix, k, keylen, &key);
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key 
 				<< ", klen: " << key.size() << dendl;
 #endif
 		bat.Delete(db->default_cf, rocksdb::Slice(key));
@@ -1044,13 +1044,13 @@ void RocksDBStore::RocksDBTransactionImpl::rm_single_key(const string &prefix,
 	auto cf = db->get_cf_handle(prefix);
 	if (cf) {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k 
 				<< ", klen: " << k.size() << dendl;
 #endif
 		bat.SingleDelete(cf, k);
 	} else {
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << combine_strings(prefix, k) 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << combine_strings(prefix, k) 
 				<< ", klen: " << combine_strings(prefix, k).size() << dendl;
 #endif
 		bat.SingleDelete(db->default_cf, combine_strings(prefix, k));
@@ -1066,7 +1066,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkeys_by_prefix(const string &prefix
 	int it_cnt = 0;
 
 #ifdef TRACE_RXDB
-	lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {OPEN}, prefix: " << prefix << 
+	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {OPEN}, prefix: " << prefix << 
 			", prefix size: " << prefix.size() << dendl;
 #endif
 	for (it->seek_to_first(); it->valid(); it->next()) {
@@ -1077,7 +1077,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkeys_by_prefix(const string &prefix
 				string endprefix =
 					"\xff\xff\xff\xff"; // FIXME: this is cheating...
 #ifdef TRACE_RXDB
-				lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, endprefix: " << endprefix << 
+				ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, endprefix: " << endprefix << 
 						", endprefix length: " << endprefix.size() << dendl;
 #endif
 				bat.DeleteRange(cf, string(), endprefix);
@@ -1085,7 +1085,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkeys_by_prefix(const string &prefix
 				string endprefix = prefix;
 				endprefix.push_back('\x01');
 #ifdef TRACE_RXDB
-				lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, endprefix: " << combine_strings(endprefix, string()) << 
+				ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, endprefix: " << combine_strings(endprefix, string()) << 
 						", endprefix length: " << combine_strings(endprefix, string()).size() << dendl;
 #endif
 				bat.DeleteRange(db->default_cf,
@@ -1096,13 +1096,13 @@ void RocksDBStore::RocksDBTransactionImpl::rmkeys_by_prefix(const string &prefix
 		}
 		if (cf) {
 #ifdef TRACE_RXDB
-			lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << it->key() << 
+			ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << it->key() << 
 					", klen: " << it->key().size() << dendl;
 #endif
 			bat.Delete(cf, rocksdb::Slice(it->key()));
 		} else {
 #ifdef TRACE_RXDB
-			lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << combine_strings(prefix, it->key()) << 
+			ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << combine_strings(prefix, it->key()) << 
 					", klen: " << combine_strings(prefix, it->key()).size() << dendl;
 #endif
 			bat.Delete(db->default_cf, combine_strings(prefix, it->key()));
@@ -1111,7 +1111,7 @@ void RocksDBStore::RocksDBTransactionImpl::rmkeys_by_prefix(const string &prefix
 	}
 
 #ifdef TRACE_RXDB
-	lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {END}, prefix: " << prefix << 
+	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {END}, prefix: " << prefix << 
 				", prefix length: " << prefix.size() << ", it_cnt: " << it_cnt << dendl;
 #endif
 
@@ -1131,7 +1131,7 @@ void RocksDBStore::RocksDBTransactionImpl::rm_range_keys(const string &prefix,
 	int it_cnt = 0;
 
 #ifdef TRACE_RXDB
-	lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {OPEN}, prefix: " << prefix << ", start: " << start << 
+	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {OPEN}, prefix: " << prefix << ", start: " << start << 
 			", end: " << end << ", prefix size: " << prefix.size() << ", start size: " << start.size() << 
 			", end size: " << end.size() << dendl;
 #endif
@@ -1144,13 +1144,13 @@ void RocksDBStore::RocksDBTransactionImpl::rm_range_keys(const string &prefix,
 			bat.RollbackToSavePoint();
 			if (cf) {
 #ifdef TRACE_RXDB
-				lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, start: " << start << 
+				ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, start: " << start << 
 						", end: " << end << dendl;
 #endif
 				bat.DeleteRange(cf, rocksdb::Slice(start), rocksdb::Slice(end));
 			} else {
 #ifdef TRACE_RXDB
-				lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, start: " << combine_strings(prefix, start) << 
+				ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {DeleteRange}, start: " << combine_strings(prefix, start) << 
 						", end: " << combine_strings(prefix, end) << dendl;
 #endif
 				bat.DeleteRange(db->default_cf,
@@ -1161,13 +1161,13 @@ void RocksDBStore::RocksDBTransactionImpl::rm_range_keys(const string &prefix,
 		}
 		if (cf) {
 #ifdef TRACE_RXDB
-			lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << it->key() << 
+			ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << it->key() << 
 					", klen: " << it->key().size() << dendl;
 #endif
 			bat.Delete(cf, rocksdb::Slice(it->key()));
 		} else {
 #ifdef TRACE_RXDB
-			lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << combine_strings(prefix, it->key()) << 
+			ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {Delete}, key: " << combine_strings(prefix, it->key()) << 
 					", klen: " << combine_strings(prefix, it->key()).size() << dendl;
 #endif
 			bat.Delete(db->default_cf, combine_strings(prefix, it->key()));
@@ -1177,7 +1177,7 @@ void RocksDBStore::RocksDBTransactionImpl::rm_range_keys(const string &prefix,
 	}
 
 #ifdef TRACE_RXDB
-	lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << " {END}, prefix: " << prefix << 
+	ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << " {END}, prefix: " << prefix << 
 				", prefix length: " << prefix.size() << ", it_cnt: " << it_cnt << dendl;
 #endif
 
@@ -1192,7 +1192,7 @@ void RocksDBStore::RocksDBTransactionImpl::merge(const string &prefix,
 	if (cf) {
 		// bufferlist::c_str() is non-constant, so we can't call c_str()
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k << ", klen: " << k.size() << 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << k << ", klen: " << k.size() << 
 				", vlen: " << to_set_bl.length() << ", is_con: " << to_set_bl.is_contiguous() << dendl;
 #endif
 		if (to_set_bl.is_contiguous() && to_set_bl.length() > 0) {
@@ -1210,7 +1210,7 @@ void RocksDBStore::RocksDBTransactionImpl::merge(const string &prefix,
 		string key = combine_strings(prefix, k);
 		// bufferlist::c_str() is non-constant, so we can't call c_str()
 #ifdef TRACE_RXDB
-		lderr(db->cct) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " <<  key.size() << 
+		ldout(db->cct, 1) << "[TRACE_RXDB(Tx)] " << __func__ << ", key: " << key << ", klen: " <<  key.size() << 
 				", vlen: " << to_set_bl.length() << ", is_con: " << to_set_bl.is_contiguous() << dendl;
 #endif
 		if (to_set_bl.is_contiguous() && to_set_bl.length() > 0) {
@@ -1238,7 +1238,7 @@ int RocksDBStore::get(const string &prefix, const std::set<string> &keys,
 			auto status = db->Get(rocksdb::ReadOptions(), cf,
 								  rocksdb::Slice(key), &value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
 					", klen: " << key.size() << ", status:" << status.ok() << dendl;
 #endif
 			if (status.ok()) {
@@ -1254,7 +1254,7 @@ int RocksDBStore::get(const string &prefix, const std::set<string> &keys,
 			auto status = db->Get(rocksdb::ReadOptions(), default_cf,
 								  rocksdb::Slice(k), &value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
 					", klen: " << k.size() << ", status:" << status.ok() << dendl;
 #endif
 			if (status.ok()) {
@@ -1281,7 +1281,7 @@ int RocksDBStore::get(const string &prefix, const string &key, bufferlist *out)
 	if (cf) {
 		s = db->Get(rocksdb::ReadOptions(), cf, rocksdb::Slice(key), &value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
 					", klen: " << key.size() << ", status:" << s.ok() << dendl;
 #endif
 	} else {
@@ -1289,7 +1289,7 @@ int RocksDBStore::get(const string &prefix, const string &key, bufferlist *out)
 		s = db->Get(rocksdb::ReadOptions(), default_cf, rocksdb::Slice(k),
 					&value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
 					", klen: " << k.size() << ", status:" << s.ok() << dendl;
 #endif
 	}
@@ -1319,7 +1319,7 @@ int RocksDBStore::get(const string &prefix, const char *key, size_t keylen,
 		s = db->Get(rocksdb::ReadOptions(), cf, rocksdb::Slice(key, keylen),
 					&value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << key << 
 					", klen: " << keylen << ", status:" << s.ok() << dendl;
 #endif
 	} else {
@@ -1328,7 +1328,7 @@ int RocksDBStore::get(const string &prefix, const char *key, size_t keylen,
 		s = db->Get(rocksdb::ReadOptions(), default_cf, rocksdb::Slice(k),
 					&value);
 #ifdef TRACE_RXDB
-			derr << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
+			dout(1) << "[TRACE_RXDB] " << __func__ << ", key: " << k << 
 					", klen: " << k.size() << ", status:" << s.ok() << dendl;
 #endif
 	}
@@ -1688,7 +1688,7 @@ public:
 KeyValueDB::Iterator RocksDBStore::get_iterator(const std::string &prefix)
 {
 #ifdef TRACE_RXDB
-	derr << "[TRACE_RXDB] " << __func__ << ", prefix: " << prefix << 
+	dout(1) << "[TRACE_RXDB] " << __func__ << ", prefix: " << prefix << 
 			", prefix size: " << prefix.size() << dendl;
 #endif
 	rocksdb::ColumnFamilyHandle *cf_handle =
